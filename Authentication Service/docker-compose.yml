@@ -1,0 +1,20 @@
+﻿version: "3.9"
+services:
+  auth-service:
+    build: .
+    ports:
+      - "5000:8080"
+    environment:
+      - Jwt__Key=${Jwt__Key}
+      - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
+      - ASPNETCORE_ENVIRONMENT=Production
+    depends_on:
+      - db
+
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      SA_PASSWORD: ${DB_PASSWORD}
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
