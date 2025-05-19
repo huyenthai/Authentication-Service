@@ -1,4 +1,4 @@
-﻿image: docker:latest
+image: docker:latest
 
 services:
   - docker:dind
@@ -10,13 +10,16 @@ stages:
 variables:
   DOCKER_DRIVER: overlay2
 
-build-job:
+build-auth-service:
   stage: build
   script:
+    - echo "🔨 Building Docker image..."
     - docker build -t registry.git.fhict.nl/I475867/authentication-service:latest .
 
-deploy-job:
+deploy-auth-service:
   stage: deploy
   script:
+    - echo "🚀 Logging in to GitLab Container Registry..."
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin registry.git.fhict.nl
+    - echo "📦 Pushing Docker image..."
     - docker push registry.git.fhict.nl/I475867/authentication-service:latest
