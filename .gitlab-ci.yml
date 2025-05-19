@@ -14,7 +14,8 @@ build-auth-service:
   stage: build
   script:
     - echo "Building Docker image..."
-    - docker build -t registry.git.fhict.nl/I475867/authentication-service:latest .
+    - docker build -t registry.git.fhict.nl/i475867/authentication-service:latest .
+
 
 deploy-auth-service:
   stage: deploy
