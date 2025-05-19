@@ -5,18 +5,18 @@ services:
 
 stages:
   - build
-  - push
+  - deploy
 
 variables:
   DOCKER_DRIVER: overlay2
 
-build:
+build-job:
   stage: build
   script:
     - docker build -t registry.git.fhict.nl/I475867/authentication-service:latest .
 
-push:
-  stage: push
+deploy-job:
+  stage: deploy
   script:
     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin registry.git.fhict.nl
     - docker push registry.git.fhict.nl/I475867/authentication-service:latest
