@@ -1,6 +1,7 @@
 ﻿using Authentication_Service.Business.Interfaces;
 using Authentication_Service.Data;
 using Authentication_Service.DTOs;
+using Authentication_Service.Events;
 using Authentication_Service.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -15,13 +16,14 @@ namespace Authentication_Service.Business.Services
     {
         private readonly AuthDbContext context;
         private readonly IConfiguration config;
-        private readonly IHttpClientFactory httpClientFactory;
+        private readonly RabbitMqPublisher rabbitMqPublisher;
 
-        public AuthService(AuthDbContext context, IConfiguration config, IHttpClientFactory httpClientFactory)
+        public AuthService(AuthDbContext context, IConfiguration config, RabbitMqPublisher rabbitMqPublisher)
         {
             this.context = context;
             this.config = config;
-            this.httpClientFactory = httpClientFactory;
+            this.rabbitMqPublisher = rabbitMqPublisher;
+
         }
         public async Task<User> RegisterAsync(UserSignupDto dto)
         {
@@ -38,19 +40,13 @@ namespace Authentication_Service.Business.Services
             };
             context.Users.Add(user);
             await context.SaveChangesAsync();
-            //var client = httpClientFactory.CreateClient();
-            //var response = await client.PostAsJsonAsync("http://userservice/api/users/create", new
-            //{
-            //    userId = user.Id,
-            //    username = user.Username,
-            //    email = user.Email
-            //});
-
-            //if (!response.IsSuccessStatusCode)
-            //{
-            //    throw new Exception("Failed to sync user with UserService");
-            //}
-                return user;
+            await rabbitMqPublisher.PublishUserCreatedAsync(new UserCreatedEvent
+            {
+                UserId = user.Id,
+                Username = user.Username,
+                Email = user.Email
+            });
+            return user;
         }
         public async Task<string> LoginAsync(UserLoginDto dto)
         {
@@ -79,7 +75,6 @@ namespace Authentication_Service.Business.Services
                 signingCredentials: creds);
              return new JwtSecurityTokenHandler().WriteToken(token);
            
-
         }
 
 

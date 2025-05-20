@@ -8,8 +8,13 @@ services:
       - Jwt__Key=${Jwt__Key}
       - ConnectionStrings__DefaultConnection=${ConnectionStrings__DefaultConnection}
       - ASPNETCORE_ENVIRONMENT=Production
+      -  RabbitMq__Host=rabbitmq 
     depends_on:
       - db
+      - rabbitmq
+    networks:
+      - default
+      - shared-net
 
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -18,3 +23,17 @@ services:
       ACCEPT_EULA: "Y"
     ports:
       - "1433:1433"
+    networks:
+      - default
+ 
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"     # message broker port
+      - "15672:15672"   # management UI
+    networks:
+      - shared-net 
+networks:
+  shared-net:
+    name: shared-net  # External + shared across projects
+    driver: bridge

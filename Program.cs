@@ -1,6 +1,7 @@
 using Authentication_Service.Business.Interfaces;
 using Authentication_Service.Business.Services;
 using Authentication_Service.Data;
+using Authentication_Service.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -13,7 +14,9 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<AuthDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddSingleton<RabbitMqPublisher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+
 var jwtKey = builder.Configuration["Jwt:Key"]?.Trim();
 if (string.IsNullOrWhiteSpace(jwtKey))
     throw new Exception("JWT secret key is missing!");
@@ -36,11 +39,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+var publisher = app.Services.GetRequiredService<RabbitMqPublisher>();
+await publisher.InitAsync();
 
 // Configure the HTTP request pipeline.
 
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 
 //app.UseHttpsRedirection();

@@ -5,7 +5,7 @@ services:
 
 stages:
   - build
-  - deploy
+  # - deploy
 
 variables:
   DOCKER_DRIVER: overlay2
@@ -17,10 +17,10 @@ build-auth-service:
     - docker build -t registry.git.fhict.nl/i475867/authentication-service:latest .
 
 
-deploy-auth-service:
-  stage: deploy
-  script:
-    - echo " Logging in to GitLab Container Registry..."
-    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin registry.git.fhict.nl
-    - echo " Pushing Docker image..."
-    - docker push registry.git.fhict.nl/i475867/authentication-service:latest
+# deploy-auth-service:
+#   stage: deploy
+#   script:
+#     - echo " Logging in to GitLab Container Registry..."
+#     - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin registry.git.fhict.nl
+#     - echo " Pushing Docker image..."
+#     - docker push registry.git.fhict.nl/i475867/authentication-service:latest
