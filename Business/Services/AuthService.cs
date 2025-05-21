@@ -27,10 +27,10 @@ namespace Authentication_Service.Business.Services
         }
         public async Task<User> RegisterAsync(UserSignupDto dto)
         {
-            var existing = await context.Users.AnyAsync(u => u.Email == dto.Email);
+            var existing = await context.Users.AnyAsync(u => u.Email == dto.Email || u.Username == dto.Username);
             if (existing)
             {
-                throw new Exception("Email already in use");
+                throw new Exception("Email or Username already in use");
             }
             var user = new User
             {
