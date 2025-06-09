@@ -6,7 +6,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:8081") // React frontend origin
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -16,6 +25,8 @@ builder.Services.AddDbContext<AuthDbContext>(options =>
 
 builder.Services.AddSingleton<RabbitMqPublisher>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddHostedService<UserDeletedConsumer>();
+
 
 var jwtKey = builder.Configuration["Jwt:Key"]?.Trim();
 if (string.IsNullOrWhiteSpace(jwtKey))
@@ -39,6 +50,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
 var publisher = app.Services.GetRequiredService<RabbitMqPublisher>();
 await publisher.InitAsync();
 
@@ -50,6 +62,9 @@ app.UseSwaggerUI();
 
 //app.UseHttpsRedirection();
 app.UseRouting();
+app.UseCors("AllowFrontend");
+
+
 app.UseAuthentication();
 app.UseAuthorization();
 

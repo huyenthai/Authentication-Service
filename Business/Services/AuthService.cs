@@ -27,14 +27,13 @@ namespace Authentication_Service.Business.Services
         }
         public async Task<User> RegisterAsync(UserSignupDto dto)
         {
-            var existing = await context.Users.AnyAsync(u => u.Email == dto.Email || u.Username == dto.Username);
+            var existing = await context.Users.AnyAsync(u => u.Email == dto.Email);
             if (existing)
             {
                 throw new Exception("Email or Username already in use");
             }
             var user = new User
             {
-                Username = dto.Username,
                 Email = dto.Email,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
             };
@@ -43,7 +42,7 @@ namespace Authentication_Service.Business.Services
             await rabbitMqPublisher.PublishUserCreatedAsync(new UserCreatedEvent
             {
                 UserId = user.Id,
-                Username = user.Username,
+                Username = dto.Username,
                 Email = user.Email
             });
             return user;
@@ -58,7 +57,6 @@ namespace Authentication_Service.Business.Services
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
                 new Claim(ClaimTypes.Email, user.Email)
             };
             //Using Trim(_) to remove any leading or trailing whitespace characters from the JWT secret key string.
