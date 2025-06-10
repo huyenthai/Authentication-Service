@@ -22,78 +22,72 @@ jobs:
       - run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release
 
   integration-test:
-      runs-on: ubuntu-latest
-      needs: build
-      services:
-        docker:
-          image: docker:20.10.16
-          options: --privileged
-      steps:
-        - name: Checkout Authentication Service
-          uses: actions/checkout@v3
-          with:
-            repository: huyenthai/Authentication-Service
-            path: Authentication-Service
-        
-        - name: Checkout Env-Dev
-          uses: actions/checkout@v3
-          with:
-            repository: huyenthai/Env-Dev
-            path: env-dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull Docker images
+        run: |
+          docker pull huyenthai01/authentication-service:latest
+          docker pull huyenthai01/user-service:latest
+          docker pull mcr.microsoft.com/mssql/server:2022-latest
+          docker pull rabbitmq:3-management
 
-        - name: Checkout User Service
-          uses: actions/checkout@v3
-          with:
-            repository: huyenthai/User-Service
-            path: User-Service
+      - name: Create Docker network
+        run: docker network create test-network
 
-        - name: Checkout Chat Service
-          uses: actions/checkout@v3
-          with:
-            repository: huyenthai/Chat-Service
-            path: Chat-Service
+      - name: Start auth-db
+        run: |
+          docker run -d --name auth-db --network test-network \
+            -e "SA_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+            -e "ACCEPT_EULA=Y" \
+            -p 1433:1433 \
+            mcr.microsoft.com/mssql/server:2022-latest
 
-        - name: Checkout Media Service
-          uses: actions/checkout@v3
-          with:
-            repository: huyenthai/Media-Service
-            path: Media-Service
+      - name: Start user-db
+        run: |
+          docker run -d --name user-db --network test-network \
+            -e "SA_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+            -e "ACCEPT_EULA=Y" \
+            -p 1434:1433 \
+            mcr.microsoft.com/mssql/server:2022-latest
 
-        - name: Checkout Frontend
-          uses: actions/checkout@v3
-          with:
-            repository: huyenthai/Messaging-Application-FE
-            path: Messaging-Application-FE
+      - name: Start RabbitMQ
+        run: |
+          docker run -d --name rabbitmq --network test-network \
+            -e RABBITMQ_DEFAULT_USER=${{ secrets.RABBITMQ_USER }} \
+            -e RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_PASSWORD }} \
+            -p 5672:5672 -p 15672:15672 \
+            rabbitmq:3-management
 
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v3
+      - name: Start Authentication Service
+        run: |
+          docker run -d --name auth-service --network test-network \
+            -e Jwt__Key=${{ secrets.JWT_KEY }} \
+            -e ConnectionStrings__DefaultConnection="Server=auth-db;Database=${{ secrets.AUTH_DB_NAME }};User Id=sa;Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;" \
+            -e RabbitMq__Host=rabbitmq \
+            -p 5000:8080 \
+            huyenthai01/authentication-service:latest
 
-        - name: Install Docker Compose
-          run: |
-            sudo apt-get update
-            sudo apt-get install -y docker-compose
+      - name: Start User Service
+        run: |
+          docker run -d --name user-service --network test-network \
+            -e Jwt__Key=${{ secrets.JWT_KEY }} \
+            -e ConnectionStrings__DefaultConnection="Server=user-db;Database=${{ secrets.USER_DB_NAME }};User Id=sa;Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;" \
+            -e RabbitMq__Host=rabbitmq \
+            -p 5001:8080 \
+            huyenthai01/user-service:latest
 
-        - name: Create .env file for Docker Compose
-          run: |
-            cat <<EOF > env-dev/.env
-            Jwt__Key=${{ secrets.JWT_KEY }}
-            ConnectionStrings__AuthDb=Server=auth-db;Database=${{ secrets.AUTH_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;
-            ConnectionStrings__UserDb=Server=user-db;Database=${{ secrets.USER_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;
-            RabbitMq__User=${{ secrets.RABBITMQ_USER }}
-            RabbitMq__Password=${{ secrets.RABBITMQ_PASSWORD }}
-            AzureBlob__ConnectionString=dummy
-            EOF
+      - name: Wait for services
+        run: sleep 40
 
-        - name: Run Docker Compose
-          run: |
-            cd env-dev
-            docker-compose up -d --build
+      - name: Run Integration Tests
+        run: dotnet test ./tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
 
-        - name: Wait for services
-          run: sleep 30
-
-        - name: Run Integration Tests
-          run: dotnet test ${{ env.TEST_PATH }} --configuration Release
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop auth-service user-service auth-db user-db rabbitmq
+          docker rm auth-service user-service auth-db user-db rabbitmq
+        docker network rm test-network
 
   docker-image-and-push:
     runs-on: ubuntu-latest
