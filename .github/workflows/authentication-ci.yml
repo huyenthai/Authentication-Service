@@ -6,7 +6,7 @@ on:
 
 env:
   DOCKER_IMAGE_NAME: huyenthai01/authentication-service
-  PROJECT_PATH: src/Authentication Service/Authentication Service.csproj
+  PROJECT_PATH: src/AuthenticationService/AuthenticationService.csproj
   TEST_PATH: tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj
   TAG_NAME: latest
 
