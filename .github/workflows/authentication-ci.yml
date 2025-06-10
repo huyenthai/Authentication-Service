@@ -27,16 +27,44 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout current repo (Authentication-Service)
+        uses: actions/checkout@v3
+
+      - name: Checkout Env-Dev repo
+        uses: actions/checkout@v3
+        with:
+          repository: huyenthai/Env-Dev
+          path: env-dev
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Create .env file for Docker Compose
+        run: |
+          echo "Jwt__Key=TestSecretKey123" >> env-dev/.env
+          echo "ConnectionStrings__AuthDb=Server=auth-db;Database=AuthDb;User Id=sa;Password=Your_password123;" >> env-dev/.env
+          echo "ConnectionStrings__UserDb=Server=user-db;Database=UserDb;User Id=sa;Password=Your_password123;" >> env-dev/.env
+          echo "RabbitMq__User=guest" >> env-dev/.env
+          echo "RabbitMq__Password=guest" >> env-dev/.env
+          echo "AzureBlob__ConnectionString=UseDevelopmentStorage=true" >> env-dev/.env
+
+      - name: Start services from Env-Dev
+        run: docker compose -f env-dev/docker-compose.yml up -d auth-service user-service rabbitmq auth-db user-db
+
+      - name: Wait for auth-service to be ready
+        run: |
+          for i in {1..30}; do
+            curl --fail http://localhost:5000/api/auth/login || sleep 3 || true
+          done
+
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-      - name: Run Integration Tests
-        run: |
-          dotnet test "${{ env.TEST_PATH }}" --configuration Release \
-            --collect:"XPlat Code Coverage" \
-            --results-directory TestResults
+
+      - name: Run integration tests
+        run: dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
 
   code-coverage:
     runs-on: ubuntu-latest
