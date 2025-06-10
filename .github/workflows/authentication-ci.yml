@@ -31,7 +31,10 @@ jobs:
       steps:
         - name: Checkout Authentication Service
           uses: actions/checkout@v3
-
+          with:
+            repository: huyenthai/Authentication-service
+            path: Authentication-service
+        
         - name: Checkout Env-Dev
           uses: actions/checkout@v3
           with:
