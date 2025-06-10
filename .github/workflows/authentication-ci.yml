@@ -6,7 +6,7 @@ on:
 
 env:
   DOCKER_IMAGE_NAME: huyenthai01/authentication-service
-  PROJECT_PATH: src/Authentication\ Service/Authentication\ Service.csproj
+  PROJECT_PATH: src/Authentication Service/Authentication Service.csproj
   TEST_PATH: tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj
   TAG_NAME: latest
 
@@ -21,7 +21,7 @@ jobs:
       - run: dotnet restore
       - run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release
 
-  test:
+  integration-test:
     runs-on: ubuntu-latest
     needs: build
     steps:
