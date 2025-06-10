@@ -23,6 +23,7 @@ jobs:
 
   docker-image-and-push:
     runs-on: ubuntu-latest
+    needs: integration-test
     steps:
       - uses: actions/checkout@v3
       - name: Set up Docker Buildx
@@ -41,9 +42,10 @@ jobs:
           docker push "${{ env.DOCKER_IMAGE_NAME }}:$SHORT_SHA"
           docker push "${{ env.DOCKER_IMAGE_NAME }}:${{ env.TAG_NAME }}"
 
-          
+
   integration-test:
     runs-on: ubuntu-latest
+    needs: docker-image-and-push
     steps:
       - name: Pull Docker images
         run: |
