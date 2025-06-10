@@ -103,6 +103,8 @@ jobs:
 
       - name: Run Integration Tests
         run: dotnet test ${{ env.TEST_PATH }} --configuration Release
+        working-directory: ./Authentication-Service
+
       - name: Cleanup
         if: always()
         run: |
