@@ -50,6 +50,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+app.MapHealthChecks("/health");
 
 var publisher = app.Services.GetRequiredService<RabbitMqPublisher>();
 await publisher.InitAsync();
