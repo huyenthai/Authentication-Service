@@ -25,4 +25,4 @@ RUN dotnet publish "src/AuthenticationService/AuthenticationService.csproj" -c R
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
-ENTRYPOINT ["dotnet", "Authentication Service.dll"]
+ENTRYPOINT ["dotnet", "AuthenticationService.dll"]
