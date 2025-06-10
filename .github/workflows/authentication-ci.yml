@@ -108,8 +108,27 @@ jobs:
             -p 5001:8080 \
             huyenthai01/user-service:latest
 
-      - name: Wait for services
-        run: sleep 40
+      - name: Wait for Authentication Service
+        run: |
+          for i in {1..20}; do
+            if curl -s http://auth-service:8080/health > /dev/null; then
+              echo "Auth service is ready"
+              break
+            fi
+            echo "Waiting for auth-service..."
+            sleep 5
+          done
+
+      - name: Wait for User Service
+        run: |
+          for i in {1..20}; do
+            if curl -s http://user-service:8080/health > /dev/null; then
+              echo "User service is ready"
+              break
+            fi
+            echo "Waiting for user-service..."
+            sleep 5
+          done
 
       - name: Run Integration Tests
         run: dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
