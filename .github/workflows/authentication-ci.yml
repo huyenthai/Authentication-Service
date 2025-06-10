@@ -44,9 +44,9 @@ jobs:
 
   integration-test:
     runs-on: ubuntu-latest
-    # needs: docker-image-and-push
     steps:
       - uses: actions/checkout@v3
+
       - name: Pull Docker images
         run: |
           docker pull huyenthai01/authentication-service:latest
@@ -57,22 +57,6 @@ jobs:
       - name: Create Docker network
         run: docker network create test-network
 
-      - name: Start auth-db
-        run: |
-          docker run -d --name auth-db --network test-network \
-            -e "SA_PASSWORD=${{ secrets.DB_PASSWORD }}" \
-            -e "ACCEPT_EULA=Y" \
-            -p 1433:1433 \
-            mcr.microsoft.com/mssql/server:2022-latest
-
-      - name: Start user-db
-        run: |
-          docker run -d --name user-db --network test-network \
-            -e "SA_PASSWORD=${{ secrets.DB_PASSWORD }}" \
-            -e "ACCEPT_EULA=Y" \
-            -p 1434:1433 \
-            mcr.microsoft.com/mssql/server:2022-latest
-
       - name: Start RabbitMQ
         run: |
           docker run -d --name rabbitmq --network test-network \
@@ -80,6 +64,31 @@ jobs:
             -e RABBITMQ_DEFAULT_PASS=${{ secrets.RABBITMQ_PASSWORD }} \
             -p 5672:5672 -p 15672:15672 \
             rabbitmq:3-management
+
+      - name: Wait for RabbitMQ to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -s -u "${{ secrets.RABBITMQ_USER }}:${{ secrets.RABBITMQ_PASSWORD }}" http://localhost:15672/api/health/checks/alarms | grep -q '"status":"ok"'; then
+              echo "RabbitMQ is ready!"
+              break
+            fi
+            echo "Waiting for RabbitMQ..."
+            sleep 2
+          done
+
+      - name: Start auth-db
+        run: |
+          docker run -d --name auth-db --network test-network \
+            -e "SA_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+            -e "ACCEPT_EULA=Y" \
+            mcr.microsoft.com/mssql/server:2022-latest
+
+      - name: Start user-db
+        run: |
+          docker run -d --name user-db --network test-network \
+            -e "SA_PASSWORD=${{ secrets.DB_PASSWORD }}" \
+            -e "ACCEPT_EULA=Y" \
+            mcr.microsoft.com/mssql/server:2022-latest
 
       - name: Start Authentication Service
         run: |
@@ -104,7 +113,6 @@ jobs:
 
       - name: Run Integration Tests
         run: dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
-
 
       - name: Cleanup
         if: always()
