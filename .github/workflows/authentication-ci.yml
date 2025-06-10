@@ -44,7 +44,7 @@ jobs:
 
   integration-test:
     runs-on: ubuntu-latest
-    needs: integration-test
+    needs: docker-image-and-push
     steps:
       - uses: actions/checkout@v3
       - name: Pull Docker images
