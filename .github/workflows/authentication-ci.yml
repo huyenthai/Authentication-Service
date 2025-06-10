@@ -87,7 +87,7 @@ jobs:
         run: |
           docker stop auth-service user-service auth-db user-db rabbitmq
           docker rm auth-service user-service auth-db user-db rabbitmq
-        docker network rm test-network
+          docker network rm test-network
 
   docker-image-and-push:
     runs-on: ubuntu-latest
