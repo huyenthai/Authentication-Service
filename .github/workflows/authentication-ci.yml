@@ -10,95 +10,84 @@ env:
   TEST_PATH: tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj
   TAG_NAME: latest
 
-permissions:
-  contents: read
-  security-events: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Authentication Service
-        uses: actions/checkout@v3
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
-
-      - name: Restore Dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build ${{ env.PROJECT_PATH }} --configuration Release
+      - run: dotnet restore
+      - run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release
 
   integration-test:
-    runs-on: ubuntu-latest
-    needs: build
-    services:
-      docker:
-        image: docker:20.10.16
-        options: --privileged
-    steps:
-      - name: Checkout Authentication Service
-        uses: actions/checkout@v3
+      runs-on: ubuntu-latest
+      needs: build
+      services:
+        docker:
+          image: docker:20.10.16
+          options: --privileged
+      steps:
+        - name: Checkout Authentication Service
+          uses: actions/checkout@v3
 
-      - name: Checkout Env-Dev
-        uses: actions/checkout@v3
-        with:
-          repository: huyenthai/Env-Dev
-          path: env-dev
+        - name: Checkout Env-Dev
+          uses: actions/checkout@v3
+          with:
+            repository: huyenthai/Env-Dev
+            path: env-dev
 
-      - name: Checkout User Service
-        uses: actions/checkout@v3
-        with:
-          repository: huyenthai/User-Service
-          path: User-Service
+        - name: Checkout User Service
+          uses: actions/checkout@v3
+          with:
+            repository: huyenthai/User-Service
+            path: User-Service
 
-      - name: Checkout Chat Service
-        uses: actions/checkout@v3
-        with:
-          repository: huyenthai/Chat-Service
-          path: Chat-Service
+        - name: Checkout Chat Service
+          uses: actions/checkout@v3
+          with:
+            repository: huyenthai/Chat-Service
+            path: Chat-Service
 
-      - name: Checkout Media Service
-        uses: actions/checkout@v3
-        with:
-          repository: huyenthai/Media-Service
-          path: Media-Service
+        - name: Checkout Media Service
+          uses: actions/checkout@v3
+          with:
+            repository: huyenthai/Media-Service
+            path: Media-Service
 
-      - name: Checkout Frontend
-        uses: actions/checkout@v3
-        with:
-          repository: huyenthai/Messaging-Application-FE
-          path: Messaging-Application-FE
+        - name: Checkout Frontend
+          uses: actions/checkout@v3
+          with:
+            repository: huyenthai/Messaging-Application-FE
+            path: Messaging-Application-FE
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
 
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+        - name: Install Docker Compose
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y docker-compose
 
-      - name: Run Docker Compose
-        run: |
-          cd env-dev
-          docker-compose up -d --build
-        env:
-          DB_USER: ${{ secrets.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          JWT_KEY: ${{ secrets.JWT_KEY }}
-          RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
-          RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
-          ConnectionStrings__AuthDb: "Server=auth-db;Database=${{ secrets.AUTH_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;"
-          ConnectionStrings__UserDb: "Server=user-db;Database=${{ secrets.USER_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;"
+        - name: Run Docker Compose
+          run: |
+            cd env-dev
+            docker-compose up -d --build
+          env:
+            DB_USER: ${{ secrets.DB_USER }}
+            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+            JWT_KEY: ${{ secrets.JWT_KEY }}
+            RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
+            RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
+            ConnectionStrings__AuthDb: "Server=auth-db;Database=${{ secrets.AUTH_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;"
+            ConnectionStrings__UserDb: "Server=user-db;Database=${{ secrets.USER_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;"
 
-      - name: Wait for services
-        run: sleep 30
+        - name: Wait for services
+          run: sleep 30
 
-      - name: Run Integration Tests
-        run: dotnet test ${{ env.TEST_PATH }} --configuration Release
+        - name: Run Integration Tests
+          run: dotnet test ${{ env.TEST_PATH }} --configuration Release
 
   docker-image-and-push:
     runs-on: ubuntu-latest
@@ -125,3 +114,48 @@ jobs:
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           docker push "${{ env.DOCKER_IMAGE_NAME }}:$SHORT_SHA"
           docker push "${{ env.DOCKER_IMAGE_NAME }}:${{ env.TAG_NAME }}"
+
+
+  coverage:
+    runs-on: ubuntu-latest
+    needs: integration-test
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Run Tests with Coverage
+        run: |
+          dotnet test ${{ env.TEST_PATH }} --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory TestResults
+
+      - name: Install ReportGenerator
+        run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
+      - name: Generate Cobertura Report
+        run: |
+          mkdir -p coverage
+          reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"coverage" \
+            -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
+
+      - name: Rename report for Codacy
+        run: mv coverage/Cobertura.xml coverage/cobertura.xml
+
+      - name: Upload to Codacy
+        shell: bash
+        env:
+          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
+        run: |
+          curl -Ls https://coverage.codacy.com/get.sh | bash
+          /home/runner/.cache/codacy/coverage-reporter/14.1.0/codacy-coverage-reporter \
+            report \
+            --project-token $CODACY_PROJECT_TOKEN \
+            --commit-uuid ${{ github.sha }} \
+            --language CSharp \
+            -r coverage/cobertura.xml
+
+
