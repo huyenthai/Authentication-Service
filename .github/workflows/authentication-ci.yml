@@ -32,8 +32,8 @@ jobs:
         - name: Checkout Authentication Service
           uses: actions/checkout@v3
           with:
-            repository: huyenthai/Authentication-service
-            path: Authentication-service
+            repository: huyenthai/Authentication-Service
+            path: Authentication-Service
         
         - name: Checkout Env-Dev
           uses: actions/checkout@v3
@@ -73,18 +73,21 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y docker-compose
 
+        - name: Create .env file for Docker Compose
+          run: |
+            cat <<EOF > env-dev/.env
+            Jwt__Key=${{ secrets.JWT_KEY }}
+            ConnectionStrings__AuthDb=Server=auth-db;Database=${{ secrets.AUTH_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;
+            ConnectionStrings__UserDb=Server=user-db;Database=${{ secrets.USER_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;
+            RabbitMq__User=${{ secrets.RABBITMQ_USER }}
+            RabbitMq__Password=${{ secrets.RABBITMQ_PASSWORD }}
+            AzureBlob__ConnectionString=dummy
+            EOF
+
         - name: Run Docker Compose
           run: |
             cd env-dev
             docker-compose up -d --build
-          env:
-            DB_USER: ${{ secrets.DB_USER }}
-            DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-            JWT_KEY: ${{ secrets.JWT_KEY }}
-            RABBITMQ_USER: ${{ secrets.RABBITMQ_USER }}
-            RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD }}
-            ConnectionStrings__AuthDb: "Server=auth-db;Database=${{ secrets.AUTH_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;"
-            ConnectionStrings__UserDb: "Server=user-db;Database=${{ secrets.USER_DB_NAME }};User Id=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;"
 
         - name: Wait for services
           run: sleep 30
