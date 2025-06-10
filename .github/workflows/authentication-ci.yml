@@ -46,6 +46,7 @@ jobs:
     runs-on: ubuntu-latest
     # needs: docker-image-and-push
     steps:
+      - uses: actions/checkout@v3
       - name: Pull Docker images
         run: |
           docker pull huyenthai01/authentication-service:latest
@@ -102,8 +103,8 @@ jobs:
         run: sleep 40
 
       - name: Run Integration Tests
-        run: dotnet test ${{ env.TEST_PATH }} --configuration Release
-        working-directory: ./Authentication-Service
+        run: dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
+
 
       - name: Cleanup
         if: always()
