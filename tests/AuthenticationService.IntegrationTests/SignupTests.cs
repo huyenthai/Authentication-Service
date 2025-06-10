@@ -35,14 +35,14 @@ namespace AuthenticationService.IntegrationTests
             };
 
             var signupContent = new StringContent(JsonSerializer.Serialize(signupPayload), Encoding.UTF8, "application/json");
-            var signupResponse = await _client.PostAsync("http://localhost:5000/api/auth/signup", signupContent);
+            var signupResponse = await _client.PostAsync("http://auth-service:8080/api/auth/signup", signupContent);
             signupResponse.EnsureSuccessStatusCode();
   
 
             // Step 2: Login to get JWT token
             var loginPayload = new { Email = email, Password = password };
             var loginContent = new StringContent(JsonSerializer.Serialize(loginPayload), Encoding.UTF8, "application/json");
-            var loginResponse = await _client.PostAsync("http://localhost:5000/api/auth/login", loginContent);
+            var loginResponse = await _client.PostAsync("http://auth-service:8080/api/auth/login", loginContent);
             loginResponse.EnsureSuccessStatusCode();
 
             var loginResult = await JsonSerializer.DeserializeAsync<LoginResponse>(
@@ -68,7 +68,7 @@ namespace AuthenticationService.IntegrationTests
             using var userClient = new HttpClient();
             userClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Token);
 
-            var userResponse = await userClient.GetAsync($"http://localhost:5001/api/user/{userId}");
+            var userResponse = await userClient.GetAsync($"http://user-service:8080/api/user/{userId}");
             userResponse.EnsureSuccessStatusCode();
 
             var responseBody = await userResponse.Content.ReadAsStringAsync();
