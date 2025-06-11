@@ -48,6 +48,7 @@ jobs:
     needs: docker-image-and-push
     steps:
       - uses: actions/checkout@v3
+
       - name: Pull Docker images
         run: |
           docker pull huyenthai01/authentication-service:latest
@@ -130,44 +131,24 @@ jobs:
             echo "Waiting for user-service..."
             sleep 5
           done
+
       - name: Show logs for auth-service
         run: docker logs auth-service || true
 
       - name: Show logs for user-service
         run: docker logs user-service || true
 
-      - name: Run Integration Tests
+      - name: Run Integration Tests with Coverage
         run: |
           docker run --rm --network test-network \
             -v ${{ github.workspace }}:/app \
             -w /app \
             mcr.microsoft.com/dotnet/sdk:8.0 \
-            dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
-
-      - name: Cleanup
-        if: always()
-        run: |
-          docker stop auth-service user-service auth-db user-db rabbitmq
-          docker rm auth-service user-service auth-db user-db rabbitmq
-          docker network rm test-network
-
-
-
-
-  coverage:
-    runs-on: ubuntu-latest
-    needs: integration-test
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Run Tests with Coverage
-        run: |
-          dotnet test ${{ env.TEST_PATH }} --configuration Release \
-            --collect:"XPlat Code Coverage" \
-            --results-directory TestResults
+            bash -c "
+              dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj \
+                --configuration Release \
+                --collect:'XPlat Code Coverage' \
+                --results-directory TestResults"
 
       - name: Install ReportGenerator
         run: dotnet tool install -g dotnet-reportgenerator-globaltool
@@ -189,11 +170,19 @@ jobs:
           CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
         run: |
           curl -Ls https://coverage.codacy.com/get.sh | bash
-          /home/runner/.cache/codacy/coverage-reporter/14.1.0/codacy-coverage-reporter \
+          ~/.cache/codacy/coverage-reporter/*/codacy-coverage-reporter \
             report \
             --project-token $CODACY_PROJECT_TOKEN \
             --commit-uuid ${{ github.sha }} \
             --language CSharp \
             -r coverage/cobertura.xml
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker stop auth-service user-service auth-db user-db rabbitmq
+          docker rm auth-service user-service auth-db user-db rabbitmq
+          docker network rm test-network
+
 
 
