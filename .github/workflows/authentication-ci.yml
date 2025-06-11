@@ -137,7 +137,12 @@ jobs:
         run: docker logs user-service || true
 
       - name: Run Integration Tests
-        run: dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
+        run: |
+          docker run --rm --network test-network \
+            -v ${{ github.workspace }}:/app \
+            -w /app \
+            mcr.microsoft.com/dotnet/sdk:8.0 \
+            dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
 
       - name: Cleanup
         if: always()
