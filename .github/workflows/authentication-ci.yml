@@ -178,7 +178,9 @@ jobs:
             -v ${{ github.workspace }}:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
             -t http://host.docker.internal:5000 \
-            -g gen.conf -r zap_report.html
+            -r zap_report.html \
+            -J
+
 
       - name: Upload ZAP Report
         uses: actions/upload-artifact@v4
