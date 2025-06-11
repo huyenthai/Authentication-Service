@@ -30,7 +30,10 @@ builder.Services.AddHostedService<UserDeletedConsumer>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]?.Trim();
 if (string.IsNullOrWhiteSpace(jwtKey))
+{
     throw new Exception("JWT secret key is missing!");
+}
+    
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
     {

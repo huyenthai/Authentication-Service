@@ -19,14 +19,57 @@ namespace Authentication_Service.Controllers
         [HttpPost("signup")]
         public async Task<IActionResult> Signup(UserSignupDto dto)
         {
-          var user = await authService.RegisterAsync(dto);
-          return Ok(user);
+            if (dto == null)
+            {
+                return BadRequest("User data is required");
+            }
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var user = await authService.RegisterAsync(dto);
+                return Ok(user);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message); 
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message); 
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message); 
+            }
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserLoginDto dto)
         {
-            var token = await authService.LoginAsync(dto);
-            return Ok(new { Token = token });
+            if (dto == null)
+            {
+                return BadRequest("Login data is missing.");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                var token = await authService.LoginAsync(dto);
+                return Ok(new { Token = token });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(ex.Message); 
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message); 
+            }
         }
 
         [HttpGet("profile")]

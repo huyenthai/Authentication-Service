@@ -27,32 +27,49 @@ namespace Authentication_Service.Business.Services
         }
         public async Task<User> RegisterAsync(UserSignupDto dto)
         {
+            if (dto == null)
+            {
+                throw new ArgumentNullException(nameof(dto));
+            }
             var existing = await context.Users.AnyAsync(u => u.Email == dto.Email);
             if (existing)
             {
-                throw new Exception("Email or Username already in use");
+                throw new InvalidOperationException("Email is already registered");
             }
             var user = new User
             {
-                Email = dto.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+                Email = dto.Email ?? throw new ArgumentException("Email is required"),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password ?? throw new ArgumentException("Password is required"))
             };
             context.Users.Add(user);
             await context.SaveChangesAsync();
-            await rabbitMqPublisher.PublishUserCreatedAsync(new UserCreatedEvent
+            try
             {
-                UserId = user.Id,
-                Username = dto.Username,
-                Email = user.Email
-            });
+                await rabbitMqPublisher.PublishUserCreatedAsync(new UserCreatedEvent
+                {
+                    UserId = user.Id,
+                    Username = dto.Username ?? "Unknown",
+                    Email = user.Email
+                });
+            }
+            catch (Exception ex)
+            {
+               
+                Console.WriteLine($"[Warning] RabbitMQ publish failed: {ex.Message}");
+            }
+
             return user;
         }
         public async Task<string> LoginAsync(UserLoginDto dto)
         {
-            var user = await context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+            if (dto == null)
             {
-                throw new Exception("Invalid credentials");
+                throw new ArgumentNullException(nameof(dto));
+            }
+            var user = await context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            if (user == null || string.IsNullOrWhiteSpace(dto.Password) || !BCrypt.Net.BCrypt.Verify(dto.Password ?? "", user.PasswordHash))
+            {
+                throw new UnauthorizedAccessException("Invalid credentials");
             }
             var claims = new[]
             {
