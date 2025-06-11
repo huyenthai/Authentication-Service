@@ -43,7 +43,7 @@ jobs:
           docker push "${{ env.DOCKER_IMAGE_NAME }}:${{ env.TAG_NAME }}"
 
 
-  integration-test:
+  integration-test-coverage:
     runs-on: ubuntu-latest
     needs: docker-image-and-push
     steps:
