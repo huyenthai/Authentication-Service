@@ -166,27 +166,28 @@ jobs:
       run: docker network create test-net
 
     - name: Build auth-service Docker image
-      run: |
-        docker build -t auth-service:latest .
+      run: docker build -t auth-service:latest .
 
     - name: Start auth-service container
       run: |
         docker run -d --name auth-service \
           --network test-net \
-          -p 5000:80 \
           auth-service:latest
 
-    - name: Wait for service to be ready
+    - name: Wait for service
       run: |
         for i in {1..30}; do
-          curl -s http://localhost:5000/health || sleep 2
-          if curl -s http://localhost:5000/health; then echo "Service ready"; break; fi
+          if docker exec auth-service curl -s http://localhost:80 > /dev/null; then
+            echo "Service is up"; break
+          fi
+          echo "Waiting for service..."; sleep 2
         done
 
     - name: Run ZAP scan
       run: |
+        mkdir -p zap_output
         docker run --rm --network test-net \
-          -v ${{ github.workspace }}/zap_report.json:/zap/wrk/zap_report.json \
+          -v ${{ github.workspace }}/zap_output:/zap/wrk \
           ghcr.io/zaproxy/zaproxy:stable zap.sh \
           -cmd -quickurl http://auth-service:80 \
           -quickout /zap/wrk/zap_report.json \
@@ -196,7 +197,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: zap-security-report
-        path: zap_report.json
+        path: zap_output/zap_report.json
 
 
 
