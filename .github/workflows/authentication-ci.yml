@@ -159,48 +159,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+    - name: Checkout repo
+      uses: actions/checkout@v3
 
-      - name: Create Docker network
-        run: docker network create test-net
+    - name: Create Docker network
+      run: docker network create test-net
 
-      - name: Build auth-service Docker image
-        run: docker build -t auth-service:latest .
+    - name: Build auth-service Docker image
+      run: docker build -t auth-service:latest .
 
-      - name: Start auth-service container
-        run: |
-          docker run -d --name auth-service \
-            --network test-net \
-            auth-service:latest
+    - name: Start auth-service container
+      run: |
+        docker run -d \
+          --network test-net \
+          --name auth-service \
+          auth-service:latest
 
-      - name: Wait for service
-        run: |
-          for i in {1..30}; do
-            if docker exec auth-service curl -s http://localhost:80 > /dev/null; then
-              echo "Service is up"; break
-            fi
-            echo "Waiting for service..."; sleep 2
-          done
+    - name: Wait for service to start
+      run: |
+        for i in {1..30}; do
+          if docker exec auth-service curl -s http://localhost:80 > /dev/null; then
+            echo "Service is up"
+            break
+          fi
+          echo "Waiting for service... ($i)"
+          sleep 2
+        done
 
-      - name: Run ZAP scan
-        run: |
-          mkdir -p zap_output
-          chmod -R 777 zap_output
-          docker run --rm --network test-net \
-            --user root \
-            -v ${{ github.workspace }}/zap_output:/zap/wrk \
-            ghcr.io/zaproxy/zaproxy:stable zap.sh \
-            -cmd -quickurl http://auth-service:80 \
-            -quickout /zap/wrk/zap_report.json \
-            -quickprogress
+    - name: Debug DNS resolution
+      run: docker run --rm --network test-net busybox nslookup auth-service
 
-      - name: Upload ZAP report
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-security-report
-          path: zap_output/zap_report.json
+    - name: Run ZAP scan
+      run: |
+        mkdir -p zap_output
+        chmod -R 777 zap_output
+        docker run --rm \
+          --network test-net \
+          --user root \
+          -v ${{ github.workspace }}/zap_output:/zap/wrk \
+          ghcr.io/zaproxy/zaproxy:stable zap.sh \
+          -cmd -quickurl http://auth-service:80 \
+          -quickout /zap/wrk/zap_report.json \
+          -quickprogress
 
+    - name: Upload ZAP report
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-security-report
+        path: zap_output/zap_report.json
 
 
 
