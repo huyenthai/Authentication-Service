@@ -159,7 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: integration-test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       
       - name: Wait for auth-service to be ready (again, from GitHub runner perspective)
         run: |
