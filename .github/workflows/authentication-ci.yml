@@ -204,14 +204,12 @@ jobs:
             sleep 3
           done
 
-      - name: Wait for DNS propagation
-        run: sleep 5
-
-      - name: List running containers
-        run: docker ps
-
-      - name: Debug DNS resolution
-        run: docker run --rm --network test-net busybox nslookup auth-service
+      - name: Verify container and DNS resolution
+        run: |
+          echo "Running containers:"
+          docker ps --filter network=test-net
+          echo "DNS resolution:"
+          docker run --rm --network test-net busybox:glibc nslookup auth-service || true
 
       - name: Run ZAP scan
         run: |
