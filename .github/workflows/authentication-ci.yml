@@ -182,16 +182,17 @@ jobs:
       - name: Build auth-service Docker image
         run: docker build -t auth-service:latest .
 
-      - name: Start auth-service container
+      - name: Run ZAP scan
         run: |
-          docker run -d \
+          docker run --rm \
             --network test-net \
-            --name auth-service \
-            -e Jwt__Key=${{ secrets.JWT_KEY }} \
-            -e ConnectionStrings__AuthDb="Server=auth-db;Database=${{ secrets.AUTH_DB_NAME }};User Id=sa;Password=${{ secrets.DB_PASSWORD }};Encrypt=False;TrustServerCertificate=True;" \
-            -e RabbitMq__Host=rabbitmq \
-            -p 8080:80 \
-            auth-service:latest
+            --user root \
+            -v ${{ github.workspace }}/zap_output:/zap/wrk \
+            ghcr.io/zaproxy/zaproxy:stable zap.sh \
+            -cmd -quickurl http://auth-service:8080 \ 
+            -quickout /zap/wrk/zap_report.json \
+            -quickprogress
+
 
       - name: Wait for auth-service to be ready
         run: |
@@ -213,14 +214,12 @@ jobs:
 
       - name: Run ZAP scan
         run: |
-          mkdir -p zap_output
-          chmod -R 777 zap_output
           docker run --rm \
             --network test-net \
             --user root \
             -v ${{ github.workspace }}/zap_output:/zap/wrk \
             ghcr.io/zaproxy/zaproxy:stable zap.sh \
-            -cmd -quickurl http://auth-service:80 \
+            -cmd -quickurl http://auth-service:8080 \
             -quickout /zap/wrk/zap_report.json \
             -quickprogress
 
