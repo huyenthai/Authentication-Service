@@ -102,9 +102,11 @@ namespace AuthenticationService.IntegrationTests
         //    var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
         //    var response = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/login", content);
-
-        //    _output.WriteLine($"Login with wrong password response code: {response.StatusCode}");
+        //    string body = await response.Content.ReadAsStringAsync();
+        //    _output.WriteLine($"Response Code: {response.StatusCode}");
+        //    _output.WriteLine($"Response Body: {body}");
         //    Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+
         //}
 
         [Fact]

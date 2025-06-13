@@ -1,10 +1,11 @@
-﻿using RabbitMQ.Client;
+﻿using Authentication_Service.Business.Interfaces;
+using RabbitMQ.Client;
 using System.Text;
 using System.Text.Json;
 
 namespace Authentication_Service.Events
 {
-    public class RabbitMqPublisher
+    public class RabbitMqPublisher : IRabbitMqPublisher
     {
         private readonly IConfiguration config;
         private  IConnection connection;

@@ -49,14 +49,11 @@ namespace Authentication_Service.Controllers
         public async Task<IActionResult> Login(UserLoginDto dto)
         {
             if (dto == null)
-            {
                 return BadRequest("Login data is missing.");
-            }
 
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
+
             try
             {
                 var token = await authService.LoginAsync(dto);
@@ -64,13 +61,16 @@ namespace Authentication_Service.Controllers
             }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(ex.Message); 
+                return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message); 
+                Console.WriteLine("Unhandled exception in login: " + ex.Message);
+                return StatusCode(500, $"Exception: {ex.GetType().Name} - {ex.Message}");
             }
+
         }
+
 
         [HttpGet("profile")]
         [Authorize]

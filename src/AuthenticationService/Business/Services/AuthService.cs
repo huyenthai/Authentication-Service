@@ -16,9 +16,9 @@ namespace Authentication_Service.Business.Services
     {
         private readonly AuthDbContext context;
         private readonly IConfiguration config;
-        private readonly RabbitMqPublisher rabbitMqPublisher;
+        private readonly IRabbitMqPublisher rabbitMqPublisher;
 
-        public AuthService(AuthDbContext context, IConfiguration config, RabbitMqPublisher rabbitMqPublisher)
+        public AuthService(AuthDbContext context, IConfiguration config, IRabbitMqPublisher rabbitMqPublisher)
         {
             this.context = context;
             this.config = config;
@@ -67,10 +67,21 @@ namespace Authentication_Service.Business.Services
                 throw new ArgumentNullException(nameof(dto));
             }
             var user = await context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null || string.IsNullOrWhiteSpace(dto.Password) || !BCrypt.Net.BCrypt.Verify(dto.Password ?? "", user.PasswordHash))
+            if (user == null || string.IsNullOrWhiteSpace(dto.Password))
             {
                 throw new UnauthorizedAccessException("Invalid credentials");
             }
+
+            try
+            {
+                if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
+                    throw new UnauthorizedAccessException("Invalid credentials");
+            }
+            catch (Exception ex)
+            {
+                throw new UnauthorizedAccessException("Invalid credentials (verify failure)", ex);
+            }
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
