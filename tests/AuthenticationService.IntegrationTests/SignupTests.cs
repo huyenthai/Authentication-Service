@@ -26,6 +26,7 @@ namespace AuthenticationService.IntegrationTests
             _userServiceBaseUrl = Environment.GetEnvironmentVariable("USER_SERVICE_URL") ?? "http://user-service:8080";
         }
 
+
         [Fact]
         public async Task Signup_ThenLogin_ThenGetUserById_ShouldSucceed()
         {
