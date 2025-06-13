@@ -76,18 +76,27 @@ namespace AuthenticationService.IntegrationTests
             using var userClient = new HttpClient();
             userClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Token);
 
-            var userResponse = await userClient.GetAsync($"{_userServiceBaseUrl}/api/user/{userId}");
-            if (!userResponse.IsSuccessStatusCode)
+            HttpResponseMessage userResponse = null;
+            string responseBody = "";
+
+            for (int attempt = 1; attempt <= 5; attempt++)
             {
+                userResponse = await userClient.GetAsync($"{_userServiceBaseUrl}/api/user/{userId}");
+                if (userResponse.IsSuccessStatusCode)
+                {
+                    responseBody = await userResponse.Content.ReadAsStringAsync();
+                    break;
+                }
+
                 var error = await userResponse.Content.ReadAsStringAsync();
-                _output.WriteLine($"User-service returned error {userResponse.StatusCode}: {error}");
+                _output.WriteLine($"Attempt {attempt}: User not found. Status: {userResponse.StatusCode}. Body: {error}");
+                await Task.Delay(2000);
             }
 
             userResponse.EnsureSuccessStatusCode();
-
-            var responseBody = await userResponse.Content.ReadAsStringAsync();
             _output.WriteLine($"User-service response: {responseBody}");
             Assert.Contains(username, responseBody);
+
         }
 
         //[Fact]
