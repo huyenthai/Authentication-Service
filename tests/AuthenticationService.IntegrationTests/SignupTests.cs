@@ -99,15 +99,15 @@ namespace AuthenticationService.IntegrationTests
 
         }
 
-        //[Fact]
-        //public async Task GetProfile_WithoutToken_ShouldReturnUnauthorized()
-        //{
-        //    using var client = new HttpClient();
-        //    var response = await client.GetAsync($"{_authServiceBaseUrl}/api/auth/profile");
+        [Fact]
+        public async Task GetProfile_WithoutToken_ShouldReturnUnauthorized()
+        {
+            using var client = new HttpClient();
+            var response = await client.GetAsync($"{_authServiceBaseUrl}/api/auth/profile");
 
-        //    _output.WriteLine($"Profile request without token returned: {response.StatusCode}");
-        //    Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        //}
+            _output.WriteLine($"Profile request without token returned: {response.StatusCode}");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
 
 
 
