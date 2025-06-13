@@ -10,7 +10,7 @@ WORKDIR /src
 COPY "AuthenticationService.sln" .
 COPY "src/AuthenticationService/AuthenticationService.csproj" "src/AuthenticationService/"
 COPY "tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj" "tests/AuthenticationService.IntegrationTests/"
-
+COPY "tests/AuthenticationService.UnitTests/AuthenticationService.UnitTests.csproj tests/AuthenticationService.UnitTests/"
 
 # Restore
 RUN dotnet restore "./AuthenticationService.sln"
