@@ -158,7 +158,7 @@ jobs:
     outputs:
       commit_sha: ${{ steps.vars.outputs.commit_sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
       - uses: actions/setup-dotnet@v4
         with:
