@@ -8,6 +8,7 @@ env:
   DOCKER_IMAGE_NAME: huyenthai01/authentication-service
   PROJECT_PATH: src/AuthenticationService/AuthenticationService.csproj
   TEST_PATH: tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj
+  UNIT_TEST_PATH: tests/AuthenticationService.UnitTests/AuthenticationService.UnitTests.csproj 
   TAG_NAME: latest
 
 
@@ -169,6 +170,7 @@ jobs:
           dotnet test tests/AuthenticationService.UnitTests/AuthenticationService.UnitTests.csproj \
             --configuration Release \
             --collect:"XPlat Code Coverage" \
+            --settings coverage.runsettings \
             --results-directory TestResults
 
       - name: Upload coverage data
@@ -224,6 +226,95 @@ jobs:
             --commit-uuid ${{ needs.unit-test.outputs.commit_sha }} \
             --language CSharp \
             -r coverage/cobertura.xml
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          queries: +security-and-quality
+      - name: Restore and Build
+        run: |
+          dotnet restore
+          dotnet build ${{ env.PROJECT_PATH }} --configuration Release
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          output: codeql-results.sarif
+      - name: Upload CodeQL SARIF to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: codeql-report
+          path: codeql-results.sarif
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Gitleaks to detect secrets
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        with:
+          args: detect --redact -v --report-format=sarif --report-path=results.sarif
+      - name: Upload Gitleaks SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+
+  hadolint:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Hadolint with Docker
+        run: |
+          docker run --rm -i hadolint/hadolint hadolint --format sarif - < Dockerfile > hadolint-results.sarif || echo "{}" > hadolint-results.sarif
+
+      - name: Validate Hadolint SARIF output
+        run: |
+          if [ ! -s hadolint-results.sarif ] || ! jq empty hadolint-results.sarif; then
+            echo "Hadolint SARIF is empty or invalid. Replacing with empty SARIF."
+            echo '{"version": "2.1.0", "runs": []}' > hadolint-results.sarif
+          fi
+
+      - name: Upload Hadolint SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: hadolint-results.sarif
+      - name: Upload Hadolint SARIF to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: hadolint-report
+          path: hadolint-results.sarif
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run OWASP Dependency-Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: "ChatService"
+          format: "HTML"
+          out: "dependency-check-report"
+      - name: Upload Dependency Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-dependency-report
+          path: dependency-check-report
+
 
   # zap-scan:
   #   runs-on: ubuntu-latest
