@@ -63,6 +63,11 @@ namespace Authentication_Service.Controllers
             {
                 return Unauthorized(ex.Message);
             }
+            catch (Exception ex)
+            {
+                return BadRequest("An unexpected error occurred."); 
+            }
+
         }
 
 

@@ -30,7 +30,7 @@ namespace AuthenticationService.IntegrationTests
         public async Task Signup_ThenLogin_ThenGetUserById_ShouldSucceed()
         {
             // Step 1: Signup
-            var username = "testuser" + Guid.NewGuid().ToString("N")[..6];
+            var username = "Testuser" + Guid.NewGuid().ToString("N")[..6];
             var email = $"{username}@example.com";
             var password = "Test123!";
 
