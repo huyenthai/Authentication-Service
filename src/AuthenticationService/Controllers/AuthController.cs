@@ -49,10 +49,14 @@ namespace Authentication_Service.Controllers
         public async Task<IActionResult> Login(UserLoginDto dto)
         {
             if (dto == null)
+            {
                 return BadRequest("Login data is missing.");
+            }
 
             if (!ModelState.IsValid)
+            {
                 return BadRequest(ModelState);
+            }
 
             try
             {
