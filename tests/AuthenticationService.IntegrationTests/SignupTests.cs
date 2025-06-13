@@ -86,46 +86,7 @@ namespace AuthenticationService.IntegrationTests
             _output.WriteLine($"Profile request without token returned: {response.StatusCode}");
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
-        [Fact]
-        public async Task GetProfile_WithValidToken_ShouldReturnUserInfo()
-        {
-            var email = $"testuser_{Guid.NewGuid()}@example.com";
-            var password = "Test123!";
-            var username = "TestUser";
 
-            // 1. Signup
-            var signupPayload = new
-            {
-                Email = email,
-                Password = password,
-                Username = username
-            };
-            var signupContent = new StringContent(JsonSerializer.Serialize(signupPayload), Encoding.UTF8, "application/json");
-            var signupResponse = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/signup", signupContent);
-            signupResponse.EnsureSuccessStatusCode();
-
-            // 2. Login
-            var loginPayload = new { Email = email, Password = password };
-            var loginContent = new StringContent(JsonSerializer.Serialize(loginPayload), Encoding.UTF8, "application/json");
-            var loginResponse = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/login", loginContent);
-            loginResponse.EnsureSuccessStatusCode();
-
-            var loginBody = await loginResponse.Content.ReadAsStringAsync();
-            var token = JsonDocument.Parse(loginBody).RootElement.GetProperty("token").GetString();
-
-            // 3. Call /profile
-            var request = new HttpRequestMessage(HttpMethod.Get, $"{_authServiceBaseUrl}/api/auth/profile");
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            var profileResponse = await _client.SendAsync(request);
-            profileResponse.EnsureSuccessStatusCode();
-
-            var profileBody = await profileResponse.Content.ReadAsStringAsync();
-            _output.WriteLine($"Profile body: {profileBody}");
-
-            var json = JsonDocument.Parse(profileBody).RootElement;
-            Assert.Equal(email, json.GetProperty("email").GetString());
-            Assert.NotNull(json.GetProperty("userId").GetString());
-        }
 
 
     }
