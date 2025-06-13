@@ -43,6 +43,13 @@ namespace AuthenticationService.IntegrationTests
             var loginPayload = new { Email = email, Password = password };
             var loginContent = new StringContent(JsonSerializer.Serialize(loginPayload), Encoding.UTF8, "application/json");
             var loginResponse = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/login", loginContent);
+            if (!loginResponse.IsSuccessStatusCode)
+            {
+                var errorBody = await loginResponse.Content.ReadAsStringAsync();
+                _output.WriteLine($"Login failed with status {loginResponse.StatusCode}: {errorBody}");
+            }
+            loginResponse.EnsureSuccessStatusCode();
+
             loginResponse.EnsureSuccessStatusCode();
 
             var loginResult = await JsonSerializer.DeserializeAsync<LoginResponse>(
@@ -70,6 +77,12 @@ namespace AuthenticationService.IntegrationTests
             userClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResult.Token);
 
             var userResponse = await userClient.GetAsync($"{_userServiceBaseUrl}/api/user/{userId}");
+            if (!userResponse.IsSuccessStatusCode)
+            {
+                var error = await userResponse.Content.ReadAsStringAsync();
+                _output.WriteLine($"User-service returned error {userResponse.StatusCode}: {error}");
+            }
+
             userResponse.EnsureSuccessStatusCode();
 
             var responseBody = await userResponse.Content.ReadAsStringAsync();
