@@ -140,7 +140,10 @@ namespace AuthenticationService.UnitTests
 
             var result = await _controller.Login(dto);
             var ok = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(token, ((dynamic)ok.Value).Token);
+            var value = ok.Value!;
+            var tokenValue = value.GetType().GetProperty("Token")?.GetValue(value, null);
+            Assert.Equal(token, tokenValue);
+
         }
 
         [Fact]
@@ -164,9 +167,15 @@ namespace AuthenticationService.UnitTests
 
             var result = controller.Profile();
             var ok = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal("1", ((dynamic)ok.Value).userId);
-            Assert.Equal("User", ((dynamic)ok.Value).username);
-            Assert.Equal("user@example.com", ((dynamic)ok.Value).email);
+            var value = ok.Value!;
+            var userId = value.GetType().GetProperty("userId")?.GetValue(value, null);
+            var username = value.GetType().GetProperty("username")?.GetValue(value, null);
+            var email = value.GetType().GetProperty("email")?.GetValue(value, null);
+
+            Assert.Equal("1", userId);
+            Assert.Equal("User", username);
+            Assert.Equal("user@example.com", email);
+
         }
     }
 }

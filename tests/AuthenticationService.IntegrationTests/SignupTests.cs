@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
@@ -76,39 +77,6 @@ namespace AuthenticationService.IntegrationTests
             Assert.Contains(username, responseBody);
         }
 
-        //[Fact]
-        //public async Task Signup_WithDuplicateEmail_ShouldReturnBadRequest()
-        //{
-        //    var email = $"dup-{Guid.NewGuid():N}@example.com";
-        //    var password = "Test123!";
-        //    var username = $"dupuser{Guid.NewGuid():N}".Substring(0, 8);
-
-        //    var payload = new { Username = username, Email = email, Password = password };
-        //    var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-        //    var firstResponse = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/signup", content);
-        //    firstResponse.EnsureSuccessStatusCode();
-
-        //    var secondResponse = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/signup", content);
-
-        //    _output.WriteLine($"Second signup response code: {secondResponse.StatusCode}");
-        //    Assert.Equal(HttpStatusCode.BadRequest, secondResponse.StatusCode);
-        //}
-
-        //[Fact]
-        //public async Task Login_WithWrongPassword_ShouldReturnUnauthorized()
-        //{
-        //    var payload = new { Email = "nonexistent@example.com", Password = "WrongPassword123!" };
-        //    var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-        //    var response = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/login", content);
-        //    string body = await response.Content.ReadAsStringAsync();
-        //    _output.WriteLine($"Response Code: {response.StatusCode}");
-        //    _output.WriteLine($"Response Body: {body}");
-        //    Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-
-        //}
-
         [Fact]
         public async Task GetProfile_WithoutToken_ShouldReturnUnauthorized()
         {
@@ -118,5 +86,47 @@ namespace AuthenticationService.IntegrationTests
             _output.WriteLine($"Profile request without token returned: {response.StatusCode}");
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
+        [Fact]
+        public async Task GetProfile_WithValidToken_ShouldReturnUserInfo()
+        {
+            var email = $"testuser_{Guid.NewGuid()}@example.com";
+            var password = "Test123!";
+            var username = "TestUser";
+
+            // 1. Signup
+            var signupPayload = new
+            {
+                Email = email,
+                Password = password,
+                Username = username
+            };
+            var signupContent = new StringContent(JsonSerializer.Serialize(signupPayload), Encoding.UTF8, "application/json");
+            var signupResponse = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/signup", signupContent);
+            signupResponse.EnsureSuccessStatusCode();
+
+            // 2. Login
+            var loginPayload = new { Email = email, Password = password };
+            var loginContent = new StringContent(JsonSerializer.Serialize(loginPayload), Encoding.UTF8, "application/json");
+            var loginResponse = await _client.PostAsync($"{_authServiceBaseUrl}/api/auth/login", loginContent);
+            loginResponse.EnsureSuccessStatusCode();
+
+            var loginBody = await loginResponse.Content.ReadAsStringAsync();
+            var token = JsonDocument.Parse(loginBody).RootElement.GetProperty("token").GetString();
+
+            // 3. Call /profile
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{_authServiceBaseUrl}/api/auth/profile");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var profileResponse = await _client.SendAsync(request);
+            profileResponse.EnsureSuccessStatusCode();
+
+            var profileBody = await profileResponse.Content.ReadAsStringAsync();
+            _output.WriteLine($"Profile body: {profileBody}");
+
+            var json = JsonDocument.Parse(profileBody).RootElement;
+            Assert.Equal(email, json.GetProperty("email").GetString());
+            Assert.NotNull(json.GetProperty("userId").GetString());
+        }
+
+
     }
 }
