@@ -204,6 +204,7 @@ jobs:
             -reports:"TestResults/**/coverage.cobertura.xml" \
             -targetdir:"coverage" \
             -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
+            -filefilters:"-*.Migrations.*;-*RabbitMqPublisher.cs";-**Program.cs";-**UserDeletedConsumer.cs"
 
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4

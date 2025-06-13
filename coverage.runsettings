@@ -4,18 +4,11 @@
     <DataCollectors>
       <DataCollector friendlyName="XPlat Code Coverage">
         <Configuration>
-          <Format>cobertura</Format>
-          <Include>
-            <ModulePath>.*AuthenticationService.*</ModulePath>
-          </Include>
           <Exclude>
-            <Class>Authentication_Service.Program</Class>
-            <Path>.*Migrations.*</Path>
-
-            <Class>Authentication_Service.Events.RabbitMqPublisher</Class>
-
-            <Class>Authentication_Service.Events.UserDeletedConsumer</Class>
-            <Path>.*Tests.*</Path>
+            <File>.*Migrations.*</File>
+            <File>.*Program.cs</File>
+            <File>.*RabbitMqPublisher.cs</File>
+            <File>.*UserDeletedConsumer.cs</File>
           </Exclude>
         </Configuration>
       </DataCollector>
