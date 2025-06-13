@@ -42,7 +42,7 @@ namespace Authentication_Service.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message); 
+                return BadRequest("An unexpected error occurred.");
             }
         }
         [HttpPost("login")]
@@ -65,8 +65,7 @@ namespace Authentication_Service.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Unhandled exception in login: " + ex.Message);
-                return StatusCode(500, $"Exception: {ex.GetType().Name} - {ex.Message}");
+                return BadRequest("An unexpected error occurred."); 
             }
 
         }

@@ -64,16 +64,17 @@ namespace AuthenticationService.UnitTests
         }
 
         [Fact]
-        public async Task Signup_WithUnexpectedException_ReturnsStatus500()
+        public async Task Signup_WithUnexpectedException_ReturnsBadRequest()
         {
             var dto = new UserSignupDto { Email = "test@example.com", Password = "pass", Username = "test" };
             _authServiceMock.Setup(s => s.RegisterAsync(dto)).ThrowsAsync(new Exception("Something failed"));
 
             var result = await _controller.Signup(dto);
-            var status = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, status.StatusCode);
-            Assert.Equal("Something failed", status.Value);
+            var status = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, status.StatusCode);
+            Assert.Contains("unexpected error", status.Value.ToString(), StringComparison.OrdinalIgnoreCase);
         }
+
 
         [Fact]
         public async Task Signup_WithValidDto_ReturnsOk()
@@ -119,16 +120,17 @@ namespace AuthenticationService.UnitTests
         }
 
         [Fact]
-        public async Task Login_WithUnexpectedError_Returns500()
+        public async Task Login_WithUnexpectedError_ReturnsBadRequest()
         {
             var dto = new UserLoginDto { Email = "test@example.com", Password = "somepass" };
             _authServiceMock.Setup(s => s.LoginAsync(dto)).ThrowsAsync(new Exception("DB error"));
 
             var result = await _controller.Login(dto);
-            var status = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, status.StatusCode);
-            Assert.Contains("DB error", status.Value.ToString());
+            var status = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(400, status.StatusCode);
+            Assert.Contains("unexpected error", status.Value.ToString(), StringComparison.OrdinalIgnoreCase);
         }
+
 
         [Fact]
         public async Task Login_WithValidDto_ReturnsToken()

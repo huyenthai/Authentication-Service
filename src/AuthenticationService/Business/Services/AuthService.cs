@@ -67,21 +67,10 @@ namespace Authentication_Service.Business.Services
                 throw new ArgumentNullException(nameof(dto));
             }
             var user = await context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
-            if (user == null || string.IsNullOrWhiteSpace(dto.Password))
+            if (user == null || string.IsNullOrWhiteSpace(dto.Password) ||!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
             {
                 throw new UnauthorizedAccessException("Invalid credentials");
             }
-
-            try
-            {
-                if (!BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
-                    throw new UnauthorizedAccessException("Invalid credentials");
-            }
-            catch (Exception ex)
-            {
-                throw new UnauthorizedAccessException("Invalid credentials (verify failure)", ex);
-            }
-
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
