@@ -204,7 +204,7 @@ jobs:
             -reports:"TestResults/**/coverage.cobertura.xml" \
             -targetdir:"coverage" \
             -reporttypes:"Cobertura;HtmlInline_AzurePipelines" \
-            -filefilters:"-*.Migrations.*;-*RabbitMqPublisher.cs;-**Program.cs;-**UserDeletedConsumer.cs";-**Dockerfile.cs";-**.github.cs";-**appsettings.json";-**.gitlab-ci.yml";-**IRabbitMqPublisher.cs";-**launchSettings.json"
+            -filefilters:"-*.Migrations.*;-*RabbitMqPublisher.cs;-**Program.cs;-**UserDeletedConsumer.cs";-**Dockerfile";-**.github";-**appsettings.json";-**.gitlab-ci.yml";-**IRabbitMqPublisher.cs";-**launchSettings.json"
 
 
       - name: Upload HTML report as artifact
