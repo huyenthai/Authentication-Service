@@ -23,11 +23,6 @@ namespace Authentication_Service.Controllers
             {
                 return BadRequest("User data is required");
             }
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var user = await authService.RegisterAsync(dto);
             return Ok(user);
             
@@ -40,13 +35,7 @@ namespace Authentication_Service.Controllers
             {
                 return BadRequest("Login data is missing.");
             }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-           var token = await authService.LoginAsync(dto);
+            var token = await authService.LoginAsync(dto);
            return Ok(new { Token = token });
       
         }
