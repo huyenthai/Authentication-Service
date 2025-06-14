@@ -203,8 +203,9 @@ jobs:
           reportgenerator \
             -reports:"TestResults/**/coverage.cobertura.xml" \
             -targetdir:"coverage" \
-            -reporttypes:"Cobertura;HtmlInline_AzurePipelines"
-            -filefilters:"-*.Migrations.*;-*RabbitMqPublisher.cs";-**Program.cs";-**UserDeletedConsumer.cs"
+            -reporttypes:"Cobertura;HtmlInline_AzurePipelines" \
+            -filefilters:"-*.Migrations.*;-*RabbitMqPublisher.cs;-**Program.cs;-**UserDeletedConsumer.cs"
+
 
       - name: Upload HTML report as artifact
         uses: actions/upload-artifact@v4
@@ -261,6 +262,8 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       - name: Run Gitleaks to detect secrets
         uses: gitleaks/gitleaks-action@v2
         continue-on-error: true
