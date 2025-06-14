@@ -142,6 +142,8 @@ jobs:
           docker run --rm --network test-network \
             -v ${{ github.workspace }}:/app \
             -w /app \
+            -e AUTH_SERVICE_URL=http://auth-service:8080 \
+            -e USER_SERVICE_URL=http://user-service:8080 \
             mcr.microsoft.com/dotnet/sdk:8.0 \
             dotnet test tests/AuthenticationService.IntegrationTests/AuthenticationService.IntegrationTests.csproj --configuration Release
 

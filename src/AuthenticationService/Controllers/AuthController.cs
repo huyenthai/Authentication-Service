@@ -27,23 +27,11 @@ namespace Authentication_Service.Controllers
             {
                 return BadRequest(ModelState);
             }
-            try
-            {
-                var user = await authService.RegisterAsync(dto);
-                return Ok(user);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message); 
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(ex.Message); 
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("An unexpected error occurred.");
-            }
+
+            var user = await authService.RegisterAsync(dto);
+            return Ok(user);
+            
+            
         }
         [HttpPost("login")]
         public async Task<IActionResult> Login(UserLoginDto dto)
@@ -58,20 +46,9 @@ namespace Authentication_Service.Controllers
                 return BadRequest(ModelState);
             }
 
-            try
-            {
-                var token = await authService.LoginAsync(dto);
-                return Ok(new { Token = token });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Unauthorized(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest("An unexpected error occurred."); 
-            }
-
+           var token = await authService.LoginAsync(dto);
+           return Ok(new { Token = token });
+      
         }
 
 
