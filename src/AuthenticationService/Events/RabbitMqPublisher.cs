@@ -15,7 +15,7 @@ namespace Authentication_Service.Events
         {
             this.config = config;
         }
-        public async Task InitAsync()
+        public virtual async Task InitAsync()
         {
             var factory = new ConnectionFactory() { HostName = config["RabbitMq:Host"] };
             connection = await factory.CreateConnectionAsync();
@@ -26,7 +26,7 @@ namespace Authentication_Service.Events
                 autoDelete:false,
                 arguments:null);
         }
-        public async Task PublishUserCreatedAsync(UserCreatedEvent evt)
+        public virtual async Task PublishUserCreatedAsync(UserCreatedEvent evt)
         {
             var message = JsonSerializer.Serialize(evt);
             var body = Encoding.UTF8.GetBytes(message);

@@ -18,7 +18,7 @@ namespace AuthenticationService.UnitTests
         private readonly AuthService _authService;
         private readonly AuthDbContext _context;
         private readonly Mock<IConfiguration> _configMock = new();
-        private readonly Mock<IRabbitMqPublisher> _rabbitMock = new();
+        private readonly RabbitMqPublisher _rabbitMock = new FakeRabbitMqPublisher();
 
         public AuthServiceTests()
         {
@@ -32,9 +32,8 @@ namespace AuthenticationService.UnitTests
             _configMock.Setup(c => c["Jwt:Issuer"]).Returns("test_issuer");
             _configMock.Setup(c => c["Jwt:Audience"]).Returns("test_audience");
 
-            _authService = new AuthService(_context, _configMock.Object, _rabbitMock.Object);
+            _authService = new AuthService(_context, _configMock.Object, _rabbitMock);
         }
-
         [Fact]
         public async Task RegisterAsync_WithValidInput_ShouldCreateUserAndPublishEvent()
         {
@@ -50,8 +49,11 @@ namespace AuthenticationService.UnitTests
             Assert.NotNull(user);
             Assert.Equal(dto.Email, user.Email);
             Assert.NotNull(user.PasswordHash);
-            _rabbitMock.Verify(p => p.PublishUserCreatedAsync(It.IsAny<UserCreatedEvent>()), Times.Once);
+
+            var fakePublisher = (FakeRabbitMqPublisher)_rabbitMock;
+            Assert.True(fakePublisher.WasPublishCalled, "Expected PublishUserCreatedAsync to be called.");
         }
+
 
         [Fact]
         public async Task RegisterAsync_WithExistingEmail_ShouldThrowInvalidOperationException()
