@@ -16,9 +16,9 @@ namespace Authentication_Service.Business.Services
     {
         private readonly AuthDbContext context;
         private readonly IConfiguration config;
-        private readonly IRabbitMqPublisher rabbitMqPublisher;
+        private readonly RabbitMqPublisher rabbitMqPublisher;
 
-        public AuthService(AuthDbContext context, IConfiguration config, IRabbitMqPublisher rabbitMqPublisher)
+        public AuthService(AuthDbContext context, IConfiguration config, RabbitMqPublisher rabbitMqPublisher)
         {
             this.context = context;
             this.config = config;
